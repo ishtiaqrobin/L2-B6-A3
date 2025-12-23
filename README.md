@@ -298,8 +298,6 @@ HAVING
 ## 📁 Project Files
 
 - **[queries.sql](queries.sql)** - সম্পূর্ণ database schema এবং সব SQL queries
-- **[QUERY.md](QUERY.md)** - Sample data এবং expected query outputs
-- **[Assignment.md](Assignment.md)** - Assignment requirements এবং guidelines
 
 ---
 
@@ -307,8 +305,7 @@ HAVING
 
 1. PostgreSQL database তৈরি করুন
 2. `queries.sql` file এর সব queries run করুন
-3. Sample data insert করুন (QUERY.md দেখুন)
-4. প্রতিটি query test করুন
+3. প্রতিটি query test করুন
 
 ---
 
