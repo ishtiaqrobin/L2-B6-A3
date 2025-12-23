@@ -298,6 +298,7 @@ HAVING
 ## 📁 Project Files
 
 - **[queries.sql](queries.sql)** - সম্পূর্ণ database schema এবং সব SQL queries
+- **[ERD Link](https://drawsql.app/teams/nexxen-it/diagrams/vehicle-rental-system)** - Entity Relationship Diagram
 
 ---
 
