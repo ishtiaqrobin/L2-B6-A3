@@ -1,120 +1,336 @@
-Vehicle Rental System - Database Design & SQL Queries
-Overview & Objectives
+# Vehicle Rental System - Database Design & SQL Queries
 
-This assignment is designed to evaluate your understanding of database table design, ERD relationships and SQL queries. You will work with a simplified Vehicle Rental System database.
+## 📋 Project Overview
 
-By completing this assignment, you will be able to:
+এই প্রজেক্টটি একটি **Vehicle Rental System** এর ডাটাবেস ডিজাইন এবং SQL queries এর সমাধান নিয়ে কাজ করে। এখানে Users, Vehicles এবং Bookings এর মধ্যে সম্পর্ক স্থাপন করে একটি সম্পূর্ণ রেন্টাল সিস্টেম তৈরি করা হয়েছে।
 
-• Design an ERD with 1 to 1, 1 to Many and Many to 1 relationships
-• Understand primary keys and foreign keys
-• Write SQL queries using JOIN, EXISTS and WHERE
+### 🎯 Assignment Objectives
 
-Database Design & Business Logic
-The system manages:
+- **ERD Design**: One-to-One, One-to-Many এবং Many-to-One relationships সহ Entity Relationship Diagram তৈরি
+- **Database Schema**: Primary Keys এবং Foreign Keys সহ সম্পূর্ণ database schema ডিজাইন
+- **SQL Queries**: JOIN, EXISTS, WHERE, GROUP BY এবং HAVING clauses ব্যবহার করে বিভিন্ন queries লেখা
 
-• Users
-• Vehicles
-• Bookings
+---
 
-Business Logic - What Your Database Must Handle
-Your database design should support these real world scenarios:
+## 🗂️ Database Schema
 
-Users Table Must Store:
+### Tables Overview
 
-• User role (Admin or Customer)
-• Name, email, password, phone number
-• Each email must be unique (no duplicate accounts)
+এই সিস্টেমে তিনটি প্রধান টেবিল রয়েছে:
 
-Vehicles Table Must Store:
+1. **Users** - সিস্টেমের ব্যবহারকারীদের তথ্য সংরক্ষণ করে
+2. **Vehicles** - ভাড়ার জন্য উপলব্ধ গাড়ির তথ্য সংরক্ষণ করে
+3. **Bookings** - ব্যবহারকারী এবং গাড়ির বুকিং তথ্য সংরক্ষণ করে
 
-• Vehicle name, type (car/bike/truck), model
-• Registration number (must be unique)
-• Rental price per day
-• Availability status (available/rented/maintenance)
+### 1️⃣ Users Table
 
-Bookings Table Must Store:
+```sql
+CREATE TYPE user_role AS ENUM('Admin', 'Customer');
 
-• Which user made the booking (link to Users table)
-• Which vehicle was booked (link to Vehicles table)
-• Start date and end date of rental
-• Booking status (pending/confirmed/completed/cancelled)
-• Total cost of the booking
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    phone VARCHAR(16) NOT NULL,
+    role user_role NOT NULL
+);
+```
 
-Part 1: ERD Design (Mandatory)
+**Fields Explanation:**
 
-| Note: You must submit your ERD in the submission otherwise you will get 0 marks.
+- `user_id`: Primary Key, auto-increment
+- `email`: Unique constraint যাতে duplicate account তৈরি না হয়
+- `role`: ENUM type (Admin/Customer)
 
-Design an Entity Relationship Diagram (ERD) for the Vehicle Rental System.
+### 2️⃣ Vehicles Table
 
-Required Tables
-You must include the following tables:
+```sql
+CREATE TYPE vehicle_type AS ENUM('car', 'bike', 'truck');
+CREATE TYPE vehicle_status AS ENUM('available', 'rented', 'maintenance');
 
-• Users
-• Vehicles
-• Bookings
+CREATE TABLE vehicles (
+    vehicle_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    type vehicle_type NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    registration_number VARCHAR(10) UNIQUE NOT NULL,
+    rental_price DECIMAL(10, 2) NOT NULL,
+    status vehicle_status NOT NULL
+);
+```
 
-Relationship Requirements
-Your ERD must clearly show:
+**Fields Explanation:**
 
-• One to Many: User → Bookings
-• Many to One: Bookings → Vehicle
-• One to One (logical): Each booking connects exactly one user and one vehicle
+- `vehicle_id`: Primary Key
+- `registration_number`: Unique constraint
+- `type`: ENUM type (car/bike/truck)
+- `status`: ENUM type (available/rented/maintenance)
 
-ERD Must Include
-• Primary Keys (PK)
-• Foreign Keys (FK)
-• Relationship cardinality
-• Status fields (e.g. booking status, vehicle availability)
+### 3️⃣ Bookings Table
 
-Submission Format
-You need to submit your ERD as:
+```sql
+CREATE TYPE booking_status AS ENUM('pending', 'confirmed', 'completed', 'cancelled');
 
-• Lucidchart ERD Tool
-• Submit a public, shareable ERD link.
+CREATE TABLE bookings (
+    booking_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id) NOT NULL,
+    vehicle_id INT REFERENCES vehicles(vehicle_id) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status booking_status NOT NULL,
+    total_cost DECIMAL(10, 2) NOT NULL
+);
+```
 
-Part 2: SQL Queries
-Write SQL queries based on your designed schema.
+**Relationships:**
 
-| Check Sample Input/Output: To understand the expected results for each query, please refer to the Sample Query Results (QUERY.md) file.
+- `user_id`: Foreign Key → users table (Many-to-One)
+- `vehicle_id`: Foreign Key → vehicles table (Many-to-One)
 
-Query 1: JOIN
-Retrieve booking information along with:
+---
 
-• Customer name
-• Vehicle name
-• Booking status
+## 🔗 ERD Relationships
 
-Concepts used: INNER JOIN
+### Relationship Types
 
-Query 2: EXISTS
-Find all vehicles that have never been booked.
+1. **One-to-Many**: User → Bookings
+   - একজন user একাধিক booking করতে পারে
+2. **Many-to-One**: Bookings → Vehicle
+   - একাধিক booking একই vehicle এর জন্য হতে পারে
+3. **One-to-One (Logical)**: Each Booking
+   - প্রতিটি booking ঠিক একজন user এবং একটি vehicle এর সাথে সংযুক্ত
 
-Concepts used: NOT EXISTS
+---
 
-Query 3: WHERE
-Retrieve all available vehicles of a specific type (e.g. cars).
+## 📝 SQL Queries & Solutions
 
-Concepts used: SELECT, WHERE
+### Query 1: JOIN - Booking Information with Customer and Vehicle Names
 
-Query 4: GROUP BY and HAVING
-Find the total number of bookings for each vehicle and display only those vehicles that have more than 2 bookings.
+**Requirement:** বুকিং এর তথ্যের সাথে Customer এবং Vehicle এর নাম retrieve করতে হবে।
 
-Concepts used: GROUP BY, HAVING, COUNT
+**SQL Query:**
 
-Part 3: Theory Questions (Viva Practice - Progress, Not Perfection)
+```sql
+SELECT
+    b.booking_id,
+    u.name AS customer_name,
+    v.name AS vehicle_name,
+    b.start_date,
+    b.end_date,
+    b.status
+FROM
+    bookings AS b
+    INNER JOIN users AS u USING (user_id)
+    INNER JOIN vehicles AS v USING (vehicle_id);
+```
 
-| Note: Answer the questions in your own words and record them on camera in Bengali or English. Spend about two minutes on each question.
+**Explanation:**
 
-| "This video is a safe space to practice - confidence grows every time you speak."
+- `INNER JOIN` ব্যবহার করে bookings table কে users এবং vehicles table এর সাথে join করা হয়েছে
+- `USING (user_id)` এবং `USING (vehicle_id)` দিয়ে common column এর উপর ভিত্তি করে join করা হয়েছে
+- `AS` keyword দিয়ে column এর alias তৈরি করা হয়েছে
 
-Question 1
-What is a foreign key and why is it important in relational databases?
+**Expected Output:**
+| booking_id | customer_name | vehicle_name | start_date | end_date | status |
+|------------|---------------|--------------|------------|----------|---------|
+| 1 | Alice | Honda Civic | 2023-10-01 | 2023-10-05 | completed |
+| 2 | Alice | Honda Civic | 2023-11-01 | 2023-11-03 | completed |
+| 3 | Charlie | Honda Civic | 2023-12-01 | 2023-12-02 | confirmed |
+| 4 | Alice | Toyota Corolla | 2023-12-10 | 2023-12-12 | pending |
 
-Question 2
-What is the difference between WHERE and HAVING clauses in SQL?
+---
 
-Question 3
-What is a primary key and what are its characteristics?
+### Query 2: EXISTS - Find Vehicles Never Booked
 
-Question 4
-What is the difference between INNER JOIN and LEFT JOIN in SQL?
+**Requirement:** যেসব vehicles কখনো book করা হয়নি সেগুলো খুঁজে বের করতে হবে।
+
+**SQL Query:**
+
+```sql
+SELECT
+    *
+FROM
+    vehicles AS v
+WHERE
+    NOT EXISTS (
+        SELECT *
+        FROM bookings AS b
+        WHERE b.vehicle_id = v.vehicle_id
+    );
+```
+
+**Explanation:**
+
+- `NOT EXISTS` subquery ব্যবহার করা হয়েছে
+- Subquery check করে যে bookings table এ কোনো matching vehicle_id আছে কিনা
+- যদি না থাকে তাহলে সেই vehicle return হবে
+
+**Expected Output:**
+| vehicle_id | name | type | model | registration_number | rental_price | status |
+|------------|------|------|-------|---------------------|--------------|---------|
+| 3 | Yamaha R15 | bike | 2023 | GHI-789 | 30 | available |
+| 4 | Ford F-150 | truck | 2020 | JKL-012 | 100 | maintenance |
+
+---
+
+### Query 3: WHERE - Available Vehicles of Specific Type
+
+**Requirement:** নির্দিষ্ট type এর (যেমন: cars) সব available vehicles retrieve করতে হবে।
+
+**SQL Query:**
+
+```sql
+SELECT
+    *
+FROM
+    vehicles
+WHERE
+    vehicles.status = 'available'
+    AND vehicles.type = 'car';
+```
+
+**Explanation:**
+
+- `WHERE` clause এ দুইটি condition দেওয়া হয়েছে
+- `AND` operator দিয়ে দুইটি condition একসাথে check করা হয়েছে
+- শুধুমাত্র 'available' status এবং 'car' type এর vehicles return হবে
+
+**Expected Output:**
+| vehicle_id | name | type | model | registration_number | rental_price | status |
+|------------|------|------|-------|---------------------|--------------|---------|
+| 1 | Toyota Corolla | car | 2022 | ABC-123 | 50 | available |
+
+---
+
+### Query 4: GROUP BY and HAVING - Vehicles with More Than 2 Bookings
+
+**Requirement:** প্রতিটি vehicle এর জন্য মোট bookings সংখ্যা বের করতে হবে এবং শুধুমাত্র সেই vehicles দেখাতে হবে যাদের 2 এর বেশি bookings আছে।
+
+**SQL Query:**
+
+```sql
+SELECT
+    v.name AS vehicle_name,
+    COUNT(*) AS total_bookings
+FROM
+    bookings AS b
+    INNER JOIN vehicles AS v USING (vehicle_id)
+GROUP BY
+    v.name
+HAVING
+    COUNT(*) > 2;
+```
+
+**Explanation:**
+
+- `INNER JOIN` দিয়ে bookings এবং vehicles table join করা হয়েছে
+- `GROUP BY` দিয়ে vehicle name অনুযায়ী group করা হয়েছে
+- `COUNT(*)` দিয়ে প্রতিটি group এর মোট bookings count করা হয়েছে
+- `HAVING` clause দিয়ে শুধুমাত্র 2 এর বেশি bookings আছে এমন groups filter করা হয়েছে
+
+**Expected Output:**
+| vehicle_name | total_bookings |
+|--------------|----------------|
+| Honda Civic | 3 |
+
+---
+
+## 🎓 Key Concepts Used
+
+### 1. **INNER JOIN**
+
+- দুই বা ততোধিক tables এর মধ্যে matching rows খুঁজে বের করে
+- শুধুমাত্র common data return করে
+
+### 2. **NOT EXISTS**
+
+- Subquery ব্যবহার করে check করে যে কোনো row exist করে কিনা
+- Performance efficient for checking non-existence
+
+### 3. **WHERE Clause**
+
+- Rows filter করার জন্য ব্যবহৃত হয়
+- Grouping এর আগে কাজ করে
+
+### 4. **GROUP BY**
+
+- Rows কে groups এ ভাগ করে
+- Aggregate functions (COUNT, SUM, AVG) এর সাথে ব্যবহৃত হয়
+
+### 5. **HAVING Clause**
+
+- Grouped data filter করার জন্য ব্যবহৃত হয়
+- WHERE এর মতো কিন্তু groups এর জন্য
+
+---
+
+## 📊 Sample Data
+
+### Users
+
+| user_id | name    | email               | phone      | role     |
+| ------- | ------- | ------------------- | ---------- | -------- |
+| 1       | Alice   | alice@example.com   | 1234567890 | Customer |
+| 2       | Bob     | bob@example.com     | 0987654321 | Admin    |
+| 3       | Charlie | charlie@example.com | 1122334455 | Customer |
+
+### Vehicles
+
+| vehicle_id | name           | type  | model | registration_number | rental_price | status      |
+| ---------- | -------------- | ----- | ----- | ------------------- | ------------ | ----------- |
+| 1          | Toyota Corolla | car   | 2022  | ABC-123             | 50           | available   |
+| 2          | Honda Civic    | car   | 2021  | DEF-456             | 60           | rented      |
+| 3          | Yamaha R15     | bike  | 2023  | GHI-789             | 30           | available   |
+| 4          | Ford F-150     | truck | 2020  | JKL-012             | 100          | maintenance |
+
+### Bookings
+
+| booking_id | user_id | vehicle_id | start_date | end_date   | status    | total_cost |
+| ---------- | ------- | ---------- | ---------- | ---------- | --------- | ---------- |
+| 1          | 1       | 2          | 2023-10-01 | 2023-10-05 | completed | 240        |
+| 2          | 1       | 2          | 2023-11-01 | 2023-11-03 | completed | 120        |
+| 3          | 3       | 2          | 2023-12-01 | 2023-12-02 | confirmed | 60         |
+| 4          | 1       | 1          | 2023-12-10 | 2023-12-12 | pending   | 100        |
+
+---
+
+## 📁 Project Files
+
+- **[queries.sql](queries.sql)** - সম্পূর্ণ database schema এবং সব SQL queries
+- **[QUERY.md](QUERY.md)** - Sample data এবং expected query outputs
+- **[Assignment.md](Assignment.md)** - Assignment requirements এবং guidelines
+
+---
+
+## 🚀 How to Use
+
+1. PostgreSQL database তৈরি করুন
+2. `queries.sql` file এর সব queries run করুন
+3. Sample data insert করুন (QUERY.md দেখুন)
+4. প্রতিটি query test করুন
+
+---
+
+## 📚 Additional Resources
+
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [SQL JOIN Types](https://www.w3schools.com/sql/sql_join.asp)
+- [SQL Aggregate Functions](https://www.w3schools.com/sql/sql_count_avg_sum.asp)
+
+---
+
+## ✅ Assignment Completion
+
+- ✅ ERD Design with proper relationships
+- ✅ Database schema with Primary and Foreign Keys
+- ✅ Query 1: JOIN implementation
+- ✅ Query 2: EXISTS implementation
+- ✅ Query 3: WHERE clause implementation
+- ✅ Query 4: GROUP BY and HAVING implementation
+
+---
+
+**Developed by:** Ishtiaq Robin  
+**Course:** Level 2 - Batch 6 - Mission 4  
+**Assignment:** Vehicle Rental System Database Design
